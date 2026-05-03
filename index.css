@@ -1,0 +1,49 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --red: #C41E3A;
+  --dark-red: #8B0000;
+  --gold: #D4AF37;
+  --cream: #FFF8F0;
+  --parchment: #F5ECD7;
+  --ink: #1A0A00;
+  --text: #3D1C00;
+  --muted: #7A5C3A;
+  --border: rgba(212,175,55,0.25);
+  --nav-h: 72px;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--cream);
+  color: var(--text);
+  overflow-x: hidden;
+}
+
+.font-serif  { font-family: 'Playfair Display', serif; }
+.font-italic { font-family: 'Crimson Pro', serif; font-style: italic; }
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--cream); }
+::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 3px; }
+
+*:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: none; }
+}
+.toast-enter { animation: slideInRight 0.3s ease forwards; }
+
+.gallery-item:hover .gallery-caption { opacity: 1 !important; transform: none !important; }
+.gallery-item:hover img { transform: scale(1.06); }
