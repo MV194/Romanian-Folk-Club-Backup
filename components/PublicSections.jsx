@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Calendar, Users } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
-import { useT } from '../lib/i18n.jsx'
+import { useT, useLang, LANGUAGES } from '../lib/i18n.jsx'
 import StarRating from './StarRating'
 
 // ─── HeroSection ──────────────────────────────────────────────────────────────
@@ -10,6 +10,8 @@ import StarRating from './StarRating'
 export function HeroSection({ onScrollTo, onLoginClick, onDashboardClick }) {
   const { profile } = useAuth()
   const t = useT()
+  const { lang } = useLang()
+  const currentLang = LANGUAGES.find(l => l.code === lang) || LANGUAGES[0]
 
   return (
     <section id="home" style={{
@@ -20,9 +22,21 @@ export function HeroSection({ onScrollTo, onLoginClick, onDashboardClick }) {
     }}>
       {/* Grid pattern */}
       <div style={{ position:'absolute', inset:0, opacity:.05, backgroundImage:'repeating-linear-gradient(0deg,transparent,transparent 40px,var(--gold) 40px,var(--gold) 41px),repeating-linear-gradient(90deg,transparent,transparent 40px,var(--gold) 40px,var(--gold) 41px)' }}/>
-      {/* Decorative circles — hidden on small screens */}
+      {/* Decorative circles & Logo */}
       <div style={{ position:'absolute', right:'-80px', top:'50%', transform:'translateY(-50%)', width:'500px', height:'500px', borderRadius:'50%', border:'1px solid rgba(212,175,55,.12)', pointerEvents:'none' }}/>
-      <div style={{ position:'absolute', right:'-40px', top:'50%', transform:'translateY(-50%)', width:'380px', height:'380px', borderRadius:'50%', border:'1px solid rgba(212,175,55,.2)', pointerEvents:'none' }}/>
+      <div style={{ position:'absolute', right:'-40px', top:'50%', transform:'translateY(-50%)', width:'380px', height:'380px', borderRadius:'50%', border:'1px solid rgba(212,175,55,.2)', pointerEvents:'none', display:'flex', alignItems:'center', justifyContent:'center' }}>
+        <img 
+          src={currentLang.logo} 
+          alt="Logo" 
+          style={{ 
+            width: '100%', 
+            height: '100%', 
+            objectFit: 'contain', 
+            opacity: 0.9,
+            filter: 'drop-shadow(0 0 30px rgba(212,175,55,0.3))'
+          }} 
+        />
+      </div>
 
       <div style={{ maxWidth:'1200px', margin:'0 auto', padding:'clamp(40px,8vw,80px) 24px', position:'relative', zIndex:1, width:'100%' }}>
 
@@ -191,10 +205,9 @@ export function ContactSection({ content, showToast }) {
 
           <div style={{ display:'flex', flexDirection:'column', gap:'clamp(16px,2.5vw,24px)' }}>
             {[
-              ['📧', t('contact.email'),    content.email],
-              ['📞', t('contact.phone'),    content.phone],
-              ['📍', t('contact.address'),  content.address],
-              ['🕐', t('contact.meetings'), t('contact.meetTime')],
+              ['📧', t('contact.email'),    t('contact.emailVal') || content.email],
+              ['📞', t('contact.phone'),    t('contact.phoneVal') || content.phone],
+              ['📍', t('contact.address'),  t('contact.addressVal') || content.address],
             ].map(([icon, label, val]) => (
               <div key={label} style={{ display:'flex', gap:'14px', alignItems:'flex-start' }}>
                 <div style={{ width:'42px', height:'42px', background:'var(--parchment)', borderRadius:'10px', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'16px', flexShrink:0, border:'1px solid var(--border)' }}>{icon}</div>
@@ -207,23 +220,23 @@ export function ContactSection({ content, showToast }) {
           </div>
 
           <div style={{ background:'#fff', borderRadius:'14px', padding:'clamp(20px,3vw,36px)', border:'1px solid var(--border)' }}>
-            <h3 style={{ fontFamily:"'Playfair Display',serif", fontSize:'clamp(1.1rem,2vw,1.4rem)', color:'var(--ink)', marginBottom:'18px' }}>{t('contact.formTitle')}</h3>
+            <h3 style={{ fontFamily:"'Playfair Display',serif", fontSize:'clamp(1.1rem,2vw,1.4rem)', color:'var(--ink)', marginBottom:'18px' }}>{t('Contact Form')}</h3>
             {sent ? (
               <div style={{ textAlign:'center', padding:'28px 0' }}>
                 <div style={{ fontSize:'44px', marginBottom:'14px' }}>✉️</div>
-                <h4 style={{ fontFamily:"'Playfair Display',serif", color:'var(--ink)', fontSize:'1.1rem', marginBottom:'8px' }}>{t('contact.sentTitle')}</h4>
-                <p style={{ color:'var(--muted)', fontSize:'13px', lineHeight:1.65, marginBottom:'18px' }}>{t('contact.sentBody')}</p>
+                <h4 style={{ fontFamily:"'Playfair Display',serif", color:'var(--ink)', fontSize:'1.1rem', marginBottom:'8px' }}>{t('Title Sent')}</h4>
+                <p style={{ color:'var(--muted)', fontSize:'13px', lineHeight:1.65, marginBottom:'18px' }}>{t('Body Sent!')}</p>
                 <button onClick={() => setSent(false)} style={{ background:'none', border:'1.5px solid var(--border)', color:'var(--muted)', padding:'8px 18px', borderRadius:'8px', fontFamily:'inherit', fontSize:'13px', cursor:'pointer' }}>
-                  {t('contact.sendAnother')}
+                  {t('Send another message!')}
                 </button>
               </div>
             ) : (
               <>
-                <input type="text"  placeholder={t('contact.namePh')}  value={form.name}    onChange={e => setForm({...form,name:e.target.value})}    style={iSt}/>
-                <input type="email" placeholder={t('contact.emailPh')} value={form.email}   onChange={e => setForm({...form,email:e.target.value})}   style={iSt}/>
-                <textarea          placeholder={t('contact.msgPh')}   value={form.message} onChange={e => setForm({...form,message:e.target.value})} style={{...iSt,minHeight:'110px',resize:'vertical',marginBottom:'14px'}}/>
+                <input type="text"  placeholder={t('Name...')}  value={form.name}    onChange={e => setForm({...form,name:e.target.value})}    style={iSt}/>
+                <input type="email" placeholder={t('Email...')} value={form.email}   onChange={e => setForm({...form,email:e.target.value})}   style={iSt}/>
+                <textarea          placeholder={t('Message...')}   value={form.message} onChange={e => setForm({...form,message:e.target.value})} style={{...iSt,minHeight:'110px',resize:'vertical',marginBottom:'14px'}}/>
                 <button onClick={handleSubmit} disabled={sending} style={{ width:'100%', background:sending?'#aaa':'var(--red)', color:'#fff', border:'none', padding:'clamp(10px,1.5vw,13px)', borderRadius:'8px', fontFamily:'inherit', fontWeight:'500', fontSize:'clamp(13px,1.4vw,15px)', cursor:sending?'default':'pointer', transition:'.2s', display:'flex', alignItems:'center', justifyContent:'center', gap:'8px' }}>
-                  {sending ? <><Spinner/> {t('contact.sending')}</> : t('contact.send')}
+                  {sending ? <><Spinner/> {t('Sending...')}</> : t('Send Message')}
                 </button>
               </>
             )}
@@ -245,6 +258,8 @@ function Spinner() {
 // ─── Footer ───────────────────────────────────────────────────────────────────
 export function Footer({ onScrollTo }) {
   const t = useT()
+  const { lang } = useLang()
+  const currentLogo = LANGUAGES.find(l => l.code === lang)?.logo || '/logos/logo_en.png'
   const sections = [
     { key:'home',         lbl:'nav.home'         },
     { key:'about',        lbl:'nav.about'        },
@@ -257,8 +272,8 @@ export function Footer({ onScrollTo }) {
     <footer style={{ background:'var(--ink)', padding:'clamp(32px,5vw,48px) 0', borderTop:'1px solid rgba(212,175,55,.2)', textAlign:'center' }}>
       <div style={{ maxWidth:'1200px', margin:'0 auto', padding:'0 24px' }}>
         <div style={{ display:'flex', justifyContent:'center', alignItems:'center', gap:'12px', marginBottom:'16px' }}>
-          <div style={{ width:'34px', height:'34px', background:'var(--gold)', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'16px', flexShrink:0 }}>🪕</div>
-          <span style={{ fontFamily:"'Playfair Display',serif", fontSize:'clamp(13px,1.5vw,15px)', color:'rgba(255,255,255,.9)' }}>KW Romanian Folk Club</span>
+          <img src={currentLogo} alt="Logo" style={{ width: '38px', height: '38px', objectFit: 'contain', flexShrink: 0 }} />
+          <span style={{ fontFamily:"'Playfair Display',serif", fontSize:'clamp(13px,1.5vw,15px)', color:'rgba(255,255,255,.9)' }}>{t('site.name')}</span>
         </div>
         <div style={{ display:'flex', justifyContent:'center', flexWrap:'wrap', gap:'6px 16px', marginBottom:'16px' }}>
           {sections.map(s => (

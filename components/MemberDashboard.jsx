@@ -5,6 +5,7 @@ import { useAuth } from '../hooks/useAuth'
 import { useT } from '../lib/i18n.jsx'
 import StarRating from './StarRating'
 import DownloadButton from './DownloadButton'
+import LogoutConfirmModal from './LogoutConfirmModal'
 
 const COLORS = ['#C41E3A','#8B0000','#D4AF37','#1B4D3E','#1A237E','#4A0072','#BF360C','#212121']
 
@@ -12,6 +13,7 @@ export default function MemberDashboard({ showToast, onClose }) {
   const { profile, updateProfile, signOut } = useAuth()
   const t = useT()
   const [activeTab, setActiveTab]         = useState('schedule')
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [myEvents, setMyEvents]           = useState([])
   const [resources, setResources]         = useState([])
   const [eventsLoading, setEventsLoading] = useState(true)
@@ -61,8 +63,15 @@ export default function MemberDashboard({ showToast, onClose }) {
     showToast(t('toast.storySent'))
   }
 
-  const handleLogout = async () => {
-    await signOut(); onClose(); showToast(t('toast.signout'))
+  const handleLogout = () => {
+    setShowLogoutConfirm(true)
+  }
+
+  const confirmLogout = async () => {
+    setShowLogoutConfirm(false)
+    await signOut()
+    onClose()
+    showToast(t('toast.signout'))
   }
 
   const displayLetters = (avatarLetters||profile?.avatar_letters||profile?.name?.slice(0,2)||'MB').toUpperCase().slice(0,2)
@@ -236,6 +245,12 @@ export default function MemberDashboard({ showToast, onClose }) {
         @keyframes fadeIn { from{opacity:0}to{opacity:1} }
         @keyframes slideInRight { from{transform:translateX(40px);opacity:0}to{transform:none;opacity:1} }
       `}</style>
+
+      <LogoutConfirmModal
+        isOpen={showLogoutConfirm}
+        onClose={() => setShowLogoutConfirm(false)}
+        onConfirm={confirmLogout}
+      />
     </div>
   )
 }

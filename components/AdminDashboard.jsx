@@ -6,6 +6,7 @@ import StarRating from './StarRating'
 import { supabase } from '../lib/supabase'
 import { useT } from '../lib/i18n.jsx'
 import { useAuth } from '../hooks/useAuth'
+import LogoutConfirmModal from './LogoutConfirmModal'
 
 const TABS = [
   { key:'events',       icon:Calendar,      label:'Events'       },
@@ -21,6 +22,7 @@ export default function AdminDashboard({ pageContent, setPageContent, showToast,
   const { profile, signOut } = useAuth()
   const [activeTab, setActiveTab] = useState('events')
   const [stats, setStats] = useState({ events:0, gallery:0, pending:0, resources:0 })
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -31,7 +33,16 @@ export default function AdminDashboard({ pageContent, setPageContent, showToast,
     ]).then(([ev,ga,te,re]) => setStats({ events:ev.count??0, gallery:ga.count??0, pending:te.count??0, resources:re.count??0 }))
   }, [activeTab])
 
-  const handleLogout = async () => { await signOut(); onClose(); showToast(t('admin.signedOut')) }
+  const handleLogout = () => {
+    setShowLogoutConfirm(true)
+  }
+
+  const confirmLogout = async () => {
+    setShowLogoutConfirm(false)
+    await signOut()
+    onClose()
+    showToast(t('admin.signedOut'))
+  }
 
   return (
     <div style={{
@@ -116,6 +127,12 @@ export default function AdminDashboard({ pageContent, setPageContent, showToast,
         @keyframes fadeIn { from{opacity:0}to{opacity:1} }
         @keyframes slideInRight { from{transform:translateX(40px);opacity:0}to{transform:none;opacity:1} }
       `}</style>
+
+      <LogoutConfirmModal
+        isOpen={showLogoutConfirm}
+        onClose={() => setShowLogoutConfirm(false)}
+        onConfirm={confirmLogout}
+      />
     </div>
   )
 }

@@ -9,16 +9,21 @@ const NAV_KEYS = {
   gallery: 'nav.gallery', testimonials: 'nav.testimonials', contact: 'nav.contact',
 }
 
-export default function Navbar({ onLoginClick, onDashboardClick, onScrollTo, showToast }) {
+export default function Navbar({ onLoginClick, onDashboardClick, onLogoutClick, onScrollTo, showToast }) {
   const { profile, signOut } = useAuth()
   const t = useT()
   const { lang, setLang } = useLang()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const currentLogo = LANGUAGES.find(l => l.code === lang)?.logo || '/logos/logo_en.png'
 
   const handleLogout = async () => {
-    await signOut()
-    onScrollTo('home')
-    showToast(t('toast.signout'))
+    if (onLogoutClick) {
+      onLogoutClick()
+    } else {
+      await signOut()
+      onScrollTo('home')
+      showToast(t('toast.signout'))
+    }
   }
 
   const handleNav = (section) => {
@@ -42,13 +47,13 @@ export default function Navbar({ onLoginClick, onDashboardClick, onScrollTo, sho
 
           {/* Logo */}
           <div onClick={() => handleNav('home')} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', flexShrink: 0 }}>
-            <div style={{ width: '38px', height: '38px', background: 'var(--gold)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>🪕</div>
+            <img src={currentLogo} alt="Logo" style={{ width: '42px', height: '42px', objectFit: 'contain', flexShrink: 0 }} />
             <div className="logo-full">
-              <div style={{ fontFamily: "'Playfair Display',serif", fontSize: '14px', color: '#fff', lineHeight: 1.15, whiteSpace: 'nowrap' }}>KW Romanian Folk Club</div>
-              <div style={{ fontSize: '9.5px', color: 'var(--gold)', letterSpacing: '.03em', whiteSpace: 'nowrap' }}>Kitchener-Waterloo, Ontario</div>
+              <div style={{ fontFamily: "'Playfair Display',serif", fontSize: '14px', color: '#fff', lineHeight: 1.15, whiteSpace: 'nowrap' }}>{t('site.name')}</div>
+              <div style={{ fontSize: '9.5px', color: 'var(--gold)', letterSpacing: '.03em', whiteSpace: 'nowrap' }}>{t('site.tagline')}</div>
             </div>
             <div className="logo-short" style={{ display: 'none' }}>
-              <div style={{ fontFamily: "'Playfair Display',serif", fontSize: '13px', color: '#fff', whiteSpace: 'nowrap' }}>KW Folk Club</div>
+              <div style={{ fontFamily: "'Playfair Display',serif", fontSize: '13px', color: '#fff', whiteSpace: 'nowrap' }}>{t('site.name')}</div>
             </div>
           </div>
 

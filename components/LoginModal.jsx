@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { X, Eye, EyeOff, Check } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
-import { useT } from '../lib/i18n.jsx'
+import { useT, useLang, LANGUAGES } from '../lib/i18n.jsx'
 
 // ── Common / breached passwords ───────────────────────────────────────────────
 const COMMON_PASSWORDS = new Set([
@@ -16,12 +16,12 @@ const COMMON_PASSWORDS = new Set([
 
 // ── Rules — each has a regex test and an i18n key ────────────────────────────
 const RULES = [
-  { key: 'login.req.length',   test: (pw) => pw.length >= 8 },
-  { key: 'login.req.upper',    test: (pw) => /[A-Z]/.test(pw) },
-  { key: 'login.req.lower',    test: (pw) => /[a-z]/.test(pw) },
-  { key: 'login.req.number',   test: (pw) => /[0-9]/.test(pw) },
-  { key: 'login.req.special',  test: (pw) => /[^A-Za-z0-9]/.test(pw) },
-  { key: 'login.req.notCommon',test: (pw) => !COMMON_PASSWORDS.has(pw.toLowerCase()) },
+  { key: 'Must be at least 8 characters long',   test: (pw) => pw.length >= 8 },
+  { key: 'Include a capital letter',    test: (pw) => /[A-Z]/.test(pw) },
+  { key: 'Include a lowercase letter',    test: (pw) => /[a-z]/.test(pw) },
+  { key: 'Include at least one number',   test: (pw) => /[0-9]/.test(pw) },
+  { key: 'Include at least one special character',  test: (pw) => /[^A-Za-z0-9]/.test(pw) },
+  { key: 'Vulnerability Test',test: (pw) => !COMMON_PASSWORDS.has(pw.toLowerCase()) },
 ]
 
 // ── Score: count how many rules pass ─────────────────────────────────────────
@@ -76,7 +76,7 @@ function PasswordRequirements({ password, t }) {
       {/* Checklist */}
       <div style={{ background: '#fafafa', border: '1px solid #f0e0d0', borderRadius: '8px', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
         <p style={{ fontSize: '11px', fontWeight: '600', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: '4px' }}>
-          {t('login.passReqs')}
+          {t('Password Requirements:')}
         </p>
         {RULES.map(rule => {
           const pass = rule.test(password)
@@ -119,6 +119,9 @@ export default function LoginModal({ onClose, showToast, onSuccess }) {
     () => RULES.every(r => r.test(signupData.password)),
     [signupData.password]
   )
+
+  const { lang } = useLang()
+  const currentLogo = LANGUAGES.find(l => l.code === lang)?.logo || '/logos/logo_en.png'
 
   const validatePassword = (pw) => {
     for (const rule of RULES) {
@@ -167,12 +170,22 @@ export default function LoginModal({ onClose, showToast, onSuccess }) {
           <X size={20}/>
         </button>
 
-        <div style={{ textAlign:'center', marginBottom:'6px', fontSize:'40px' }}>🪕</div>
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center',    // Changed from 'right' to 'center' and fixed capitalization
+          justifyContent: 'center', // Ensures vertical centering if the div has a height
+          textAlign: 'center', 
+          marginBottom: '6px', 
+          fontSize: '40px' 
+        }}>
+          <img src={currentLogo} alt="Logo" style={{ width: '90px', height: '90px' }} />
+        </div>
         <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:'24px', color:'var(--ink)', marginBottom:'5px', textAlign:'center' }}>
-          {isSignup ? t('login.join') : t('login.welcome')}
+          {isSignup ? t('Sign Up & Join!') : t('Welcome!')}
         </h2>
         <p style={{ textAlign:'center', color:'var(--muted)', fontSize:'13px', marginBottom:'20px' }}>
-          {isSignup ? t('login.joinSub') : t('login.signinSub')}
+          {isSignup ? t('Sign Up!') : t('Log In!')}
         </p>
 
         {error && (
@@ -183,25 +196,25 @@ export default function LoginModal({ onClose, showToast, onSuccess }) {
 
         {!isSignup ? (
           <form onSubmit={handleLogin}>
-            <input style={iSt} type="email" placeholder={t('login.email')} value={loginData.email} onChange={e => setLoginData({...loginData,email:e.target.value})} required/>
-            <PasswordInput style={iSt} placeholder={t('login.password')} value={loginData.password} onChange={e => setLoginData({...loginData,password:e.target.value})}/>
+            <input style={iSt} type="email" placeholder={t('Email...')} value={loginData.email} onChange={e => setLoginData({...loginData,email:e.target.value})} required/>
+            <PasswordInput style={iSt} placeholder={t('Password...')} value={loginData.password} onChange={e => setLoginData({...loginData,password:e.target.value})}/>
             <button type="submit" disabled={loading} style={{ width:'100%', background:'var(--red)', color:'#fff', border:'none', padding:'13px', borderRadius:'8px', fontFamily:'inherit', fontWeight:'500', fontSize:'15px', cursor:loading?'default':'pointer', opacity:loading?.7:1, transition:'.2s' }}>
-              {loading ? t('login.signingIn') : t('login.signin')}
+              {loading ? t('Logging in!') : t('Log in!')}
             </button>
             <p style={{ textAlign:'center', marginTop:'14px', fontSize:'13px', color:'#888' }}>
-              {t('login.noAccount')}{' '}
+              {t("Don't have an account yet? ")}{' '}
               <button type="button" onClick={() => { setIsSignup(true); setError('') }} style={{ background:'none', border:'none', color:'var(--red)', cursor:'pointer', fontWeight:'600', fontFamily:'inherit', fontSize:'13px' }}>
-                {t('login.createOne')}
+                {t('Create an account!')}
               </button>
             </p>
           </form>
         ) : (
           <form onSubmit={handleSignup}>
-            <input style={iSt} type="text"  placeholder={t('login.fullName')} value={signupData.name}  onChange={e => setSignupData({...signupData,name:e.target.value})}  required/>
-            <input style={iSt} type="email" placeholder={t('login.email')}    value={signupData.email} onChange={e => setSignupData({...signupData,email:e.target.value})} required/>
+            <input style={iSt} type="text"  placeholder={t('Full Name...')} value={signupData.name}  onChange={e => setSignupData({...signupData,name:e.target.value})}  required/>
+            <input style={iSt} type="email" placeholder={t('Email...')}    value={signupData.email} onChange={e => setSignupData({...signupData,email:e.target.value})} required/>
             <PasswordInput
               style={iSt}
-              placeholder={t('login.passMin')}
+              placeholder={t('Password...')}
               value={signupData.password}
               onChange={e => setSignupData({...signupData,password:e.target.value})}
             />
@@ -211,12 +224,12 @@ export default function LoginModal({ onClose, showToast, onSuccess }) {
               disabled={loading || !allRulesPass}
               style={{ width:'100%', background: allRulesPass ? 'var(--red)' : '#ccc', color:'#fff', border:'none', padding:'13px', borderRadius:'8px', fontFamily:'inherit', fontWeight:'500', fontSize:'15px', cursor:(loading||!allRulesPass)?'default':'pointer', transition:'.2s' }}
             >
-              {loading ? t('login.creating') : t('login.create')}
+              {loading ? t('Creating Account!') : t('Create Account!')}
             </button>
             <p style={{ textAlign:'center', marginTop:'14px', fontSize:'13px', color:'#888' }}>
-              {t('login.haveAccount')}{' '}
+              {t('Already have an account?')}{' '}
               <button type="button" onClick={() => { setIsSignup(false); setError('') }} style={{ background:'none', border:'none', color:'var(--red)', cursor:'pointer', fontWeight:'600', fontFamily:'inherit', fontSize:'13px' }}>
-                {t('login.signInLink')}
+                {t('Log back in!')}
               </button>
             </p>
           </form>

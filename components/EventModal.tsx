@@ -23,7 +23,8 @@ export default function EventModal({
   event: ev, status, isPast = false,
   onClose, onRegister, onUnregister, onConfirm,
 }: EventModalProps) {
-  const { profile } = useAuth()
+  const auth = useAuth()
+  const profile = auth?.profile
   const t = useT()
   const regCount  = ev._regCount       ?? 0
   const confCount = ev._confirmedCount ?? 0
@@ -156,7 +157,7 @@ export default function EventModal({
                         style={{ background: 'rgba(212,175,55,.7)', border: 'none', color: '#fff', width: '28px', height: '28px', borderRadius: '50%' }}
                       />
                     )}
-                    {img.id !== -1 && profile && (img.user_id === profile.id || (profile as any).role === 'admin') && (
+                    {img.id !== -1 && profile && (img.user_id === profile?.id || (profile as any)?.role === 'admin') && (
                       <button
                         onClick={() => deleteImage(img)}
                         style={{ background: 'rgba(196,30,58,.85)', border: 'none', color: '#fff', width: '28px', height: '28px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: '.2s' }}
