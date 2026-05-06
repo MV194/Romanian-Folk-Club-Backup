@@ -1,6 +1,5 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { Analytics } from '@vercel/analytics/react'
 import { AuthProvider } from './hooks/useAuth.jsx'
 import { I18nProvider } from './lib/i18n.jsx'
 import './index.css'
@@ -15,7 +14,6 @@ async function mount() {
         <I18nProvider>
           <AuthProvider>
             <ArchiveApp />
-            <Analytics />
           </AuthProvider>
         </I18nProvider>
       </React.StrictMode>
@@ -27,7 +25,6 @@ async function mount() {
         <I18nProvider>
           <AuthProvider>
             <App />
-            <Analytics />
           </AuthProvider>
         </I18nProvider>
       </React.StrictMode>

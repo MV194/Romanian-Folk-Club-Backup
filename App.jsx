@@ -1,5 +1,6 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useAuth } from './hooks/useAuth'
+import { useT, useLang } from './lib/i18n.jsx'
 import Navbar from './components/Navbar'
 import LoginModal from './components/LoginModal'
 import Toast from './components/Toast'
@@ -12,29 +13,40 @@ import ContactSection from './components/ContactSection'
 import Footer from './components/Footer'
 import MemberDashboard from './components/MemberDashboard'
 import AdminDashboard from './components/AdminDashboard'
+import LogoutConfirmModal from './components/LogoutConfirmModal'
 
 const DEFAULT_PAGE_CONTENT = {
   hero: {
-    title: 'KW Romanian Folk Club',
+    title: 'KW Folk Club',
     subtitle: 'Preserving Heritage Through Music, Dance & Community',
     description: 'Experience the rich traditions of Romanian folk culture in Kitchener-Waterloo, Ontario',
   },
   about: {
     mission: 'To celebrate, preserve, and share Romanian folk traditions through music, dance, cultural events, and community gatherings in the Kitchener-Waterloo region.',
-    history: 'Founded in 2010, the KW Romanian Folk Club has been a cornerstone of Romanian cultural preservation. We bring together Romanian-Canadians and culture enthusiasts to keep our traditions alive.',
+    history: 'Founded in 2025, the KW Folk Club is dedicated to Romanian cultural preservation. We bring together Romanian-Canadians and culture enthusiasts to keep our traditions alive.',
     values: 'Community · Heritage · Tradition · Celebration · Inclusivity',
   },
   contact: {
-    email: 'info@kwromanianfolk.com',
+    email: 'folk.club.kw@gmail.com',
     phone: '(519) 555-0123',
-    address: 'KW Community Center, Waterloo, ON, Canada',
+    address: 'Every Sunday, 3 PM - 5 PM',
   },
 }
 
 export default function App() {
-  const { profile, loading } = useAuth()
+  const { profile, loading, signOut } = useAuth()
+  const t = useT()
+  const { lang, setLang, currentLang } = useLang()
   const [showLogin, setShowLogin]     = useState(false)
+
+  // Update favicon and title based on language
+  useEffect(() => {
+    const favicon = document.getElementById('dynamic-favicon')
+    if (favicon) favicon.href = currentLang.logo
+    document.title = t('site.name')
+  }, [currentLang, t])
   const [showDash, setShowDash]       = useState(false)
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [pageContent, setPageContent] = useState(DEFAULT_PAGE_CONTENT)
   const [toast, setToast]             = useState(null)
 
@@ -44,12 +56,24 @@ export default function App() {
     if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 80, behavior: 'smooth' })
   }, [])
 
+  const handleLogout = useCallback(() => {
+    setShowLogoutConfirm(true)
+  }, [])
+
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--ink)' }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '64px', marginBottom: '16px' }}>🪕</div>
-          <p style={{ color: 'var(--gold)', fontFamily: 'DM Sans, sans-serif', letterSpacing: '.1em', fontSize: '14px', textTransform: 'uppercase' }}>Loading…</p>
+          <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'center' }}>
+            <img 
+              src={currentLang.logo} 
+              alt="Logo"
+              style={{ width: '100px', height: '100px', objectFit: 'contain' }} 
+            />
+          </div>
+          <p style={{ color: 'var(--gold)', fontFamily: 'DM Sans, sans-serif', letterSpacing: '.1em', fontSize: '64px', textTransform: 'uppercase', margin: 0 }}>
+            {t('common.loading')}
+          </p>
         </div>
       </div>
     )
@@ -60,6 +84,7 @@ export default function App() {
       <Navbar
         onLoginClick={() => setShowLogin(true)}
         onDashboardClick={() => setShowDash(true)}
+        onLogoutClick={handleLogout}
         onScrollTo={scrollTo}
         showToast={showToast}
       />
@@ -103,6 +128,17 @@ export default function App() {
       )}
 
       {toast && <Toast msg={toast} onDone={() => setToast(null)} />}
+
+      <LogoutConfirmModal
+        isOpen={showLogoutConfirm}
+        onClose={() => setShowLogoutConfirm(false)}
+        onConfirm={async () => {
+          setShowLogoutConfirm(false)
+          await signOut()
+          scrollTo('home')
+          showToast(t('toast.signout'))
+        }}
+      />
     </div>
   )
 }
