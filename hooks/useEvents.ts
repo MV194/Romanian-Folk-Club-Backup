@@ -23,7 +23,8 @@ export function useEvents(
   showToast: (msg: string) => void,
   t: (key: string) => string = (k) => k,   // optional — defaults to key passthrough
 ): UseEventsReturn {
-  const { profile } = useAuth()
+  const auth = useAuth()
+  const profile = auth?.profile
   const [events, setEvents]               = useState<Event[]>([])
   const [registeredIds, setRegisteredIds] = useState<Set<number>>(new Set())
   const [confirmedIds, setConfirmedIds]   = useState<Set<number>>(new Set())
