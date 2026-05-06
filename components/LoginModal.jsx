@@ -164,7 +164,7 @@ export default function LoginModal({ onClose, showToast, onSuccess }) {
   }
 
   return (
-    <div onClick={onClose} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.72)', backdropFilter:'blur(4px)', zIndex:2000, display:'flex', alignItems:'center', justifyContent:'center', padding:'16px' }}>
+    <div onClick={onClose} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.72)', backdropFilter:'blur(4px)', zIndex:2001, display:'flex', alignItems:'center', justifyContent:'center', padding:'16px' }}>
       <div onClick={e => e.stopPropagation()} style={{ background:'#fff', borderRadius:'16px', padding:'36px', maxWidth:'420px', width:'100%', position:'relative', borderTop:'5px solid var(--red)', maxHeight:'90vh', overflowY:'auto' }}>
         <button onClick={onClose} style={{ position:'absolute', top:'14px', right:'14px', background:'none', border:'none', cursor:'pointer', color:'#aaa' }}>
           <X size={20}/>
