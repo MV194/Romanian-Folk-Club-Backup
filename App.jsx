@@ -8,6 +8,7 @@ import HeroSection from './components/HeroSection'
 import AboutSection from './components/AboutSection'
 import EventsSection from './components/EventsSection'
 import GallerySection from './components/GallerySection'
+import BlogSection from './components/BlogSection'
 import TestimonialsSection from './components/TestimonialsSection'
 import ContactSection from './components/ContactSection'
 import Footer from './components/Footer'
@@ -109,6 +110,8 @@ export default function App() {
         showToast={showToast}
         onLoginClick={() => setShowLogin(true)}
       />
+
+      <BlogSection />
 
       <GallerySection />
       <TestimonialsSection />

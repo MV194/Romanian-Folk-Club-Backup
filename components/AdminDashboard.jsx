@@ -1,6 +1,6 @@
 import { useState, useEffect, lazy, Suspense } from 'react'
 import AdminEventDetail from './AdminEventDetail'
-import { Calendar, Image, Users, MessageSquare, BookOpen, FileEdit, LogOut, Plus, Edit2, Trash2, Check, X } from 'lucide-react'
+import { Calendar, Image, Users, MessageSquare, BookOpen, FileEdit, LogOut, Plus, Edit2, Trash2, Check, X, Newspaper } from 'lucide-react'
 import DownloadButton from './DownloadButton'
 import StarRating from './StarRating'
 import { supabase } from '../lib/supabase'
@@ -10,6 +10,7 @@ import LogoutConfirmModal from './LogoutConfirmModal'
 
 const TABS = [
   { key:'events',       icon:Calendar,      label:'Events'       },
+  { key:'blog',         icon:Newspaper,     label:'Blog'         },
   { key:'gallery',      icon:Image,         label:'Gallery'      },
   { key:'users',        icon:Users,         label:'Users'        },
   { key:'testimonials', icon:MessageSquare, label:'Testimonials' },
@@ -21,16 +22,17 @@ export default function AdminDashboard({ pageContent, setPageContent, showToast,
   const t = useT()
   const { profile, signOut } = useAuth()
   const [activeTab, setActiveTab] = useState('events')
-  const [stats, setStats] = useState({ events:0, gallery:0, pending:0, resources:0 })
+  const [stats, setStats] = useState({ events:0, blog:0, gallery:0, pending:0, resources:0 })
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 
   useEffect(() => {
     Promise.all([
       supabase.from('events').select('id',{count:'exact',head:true}),
+      supabase.from('blog_posts').select('id',{count:'exact',head:true}),
       supabase.from('gallery').select('id',{count:'exact',head:true}),
       supabase.from('testimonials').select('id',{count:'exact',head:true}).eq('status','pending'),
       supabase.from('resources').select('id',{count:'exact',head:true}),
-    ]).then(([ev,ga,te,re]) => setStats({ events:ev.count??0, gallery:ga.count??0, pending:te.count??0, resources:re.count??0 }))
+    ]).then(([ev,bl,ga,te,re]) => setStats({ events:ev.count??0, blog:bl.count??0, gallery:ga.count??0, pending:te.count??0, resources:re.count??0 }))
   }, [activeTab])
 
   const handleLogout = () => {
@@ -87,7 +89,7 @@ export default function AdminDashboard({ pageContent, setPageContent, showToast,
 
           {/* Stats row */}
           <div style={{ display:'flex', gap:'12px', flexWrap:'wrap', marginBottom:'20px' }}>
-            {[['Events',stats.events],['Gallery',stats.gallery],['Pending',stats.pending],['Resources',stats.resources]].map(([l,v])=>(
+            {[['Events',stats.events],['Blog',stats.blog],['Gallery',stats.gallery],['Pending',stats.pending],['Resources',stats.resources]].map(([l,v])=>(
               <div key={l} style={{ background:'rgba(255,255,255,.08)', borderRadius:'8px', padding:'10px 18px', textAlign:'center', border:'1px solid rgba(255,255,255,.1)' }}>
                 <div style={{ fontFamily:"'Playfair Display',serif", fontSize:'1.4rem', color:'var(--gold)', lineHeight:1 }}>{v}</div>
                 <div style={{ fontSize:'10px', color:'rgba(255,255,255,.4)', textTransform:'uppercase', letterSpacing:'.06em', marginTop:'4px' }}>{l}</div>
@@ -115,6 +117,7 @@ export default function AdminDashboard({ pageContent, setPageContent, showToast,
         {/* Body */}
         <div style={{ padding:'28px', flex:1 }}>
           {activeTab==='events'       && <EventsManager       showToast={showToast}/>}
+          {activeTab==='blog'         && <BlogManager         showToast={showToast}/>}
           {activeTab==='gallery'      && <GalleryManager      showToast={showToast}/>}
           {activeTab==='users'        && <UsersManager        showToast={showToast}/>}
           {activeTab==='testimonials' && <TestimonialsManager showToast={showToast}/>}
@@ -137,6 +140,72 @@ export default function AdminDashboard({ pageContent, setPageContent, showToast,
   )
 }
 
+// ── BLOG ──────────────────────────────────────────────────────────────────────
+function BlogManager({ showToast }) {
+  const t = useT()
+  const { profile } = useAuth()
+  const [posts, setPosts] = useState([])
+  const [editing, setEditing] = useState(null)
+  const blank = { title:'', excerpt:'', content:'', cover_image:'', tags:[], published:false }
+
+  useEffect(() => {
+    supabase.from('blog_posts').select('*').order('created_at', { ascending: false }).then(({ data }) => setPosts(data || []))
+  }, [])
+
+  const save = async (post) => {
+    const { id, created_at, updated_at, ...fields } = post
+    const slug = fields.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+    const finalFields = { ...fields, slug, author_id: profile.id }
+    
+    if (id) {
+      const { data } = await supabase.from('blog_posts').update(finalFields).eq('id', id).select().single()
+      setPosts(p => p.map(x => x.id === id ? data : x))
+    } else {
+      const { data } = await supabase.from('blog_posts').insert(finalFields).select().single()
+      setPosts(p => [data, ...p])
+    }
+    setEditing(null); showToast('Post saved!')
+  }
+
+  const del = async (id) => {
+    if (!confirm('Delete this post?')) return
+    await supabase.from('blog_posts').delete().eq('id', id)
+    setPosts(p => p.filter(x => x.id !== id)); showToast('Deleted')
+  }
+
+  return (
+    <PanelCard title="Manage Blog Posts" action={<AddBtn onClick={() => setEditing(blank)} />}>
+      {editing && (
+        <FormBox>
+          <FF label="Title"><FI value={editing.title || ''} onChange={e => setEditing(p => ({ ...p, title: e.target.value }))} placeholder="Post title" /></FF>
+          <FF label="Excerpt"><FI value={editing.excerpt || ''} onChange={e => setEditing(p => ({ ...p, excerpt: e.target.value }))} placeholder="Short summary" /></FF>
+          <FF label="Cover Image URL"><FI value={editing.cover_image || ''} onChange={e => setEditing(p => ({ ...p, cover_image: e.target.value }))} placeholder="https://…" /></FF>
+          <FF label="Content (Markdown)"><textarea value={editing.content || ''} onChange={e => setEditing(p => ({ ...p, content: e.target.value }))} style={{ ...iSt, minHeight: '200px', resize: 'vertical' }} placeholder="Write your post content here…" /></FF>
+          <FF label="Tags (comma separated)"><FI value={editing.tags?.join(', ') || ''} onChange={e => setEditing(p => ({ ...p, tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean) }))} placeholder="culture, dance, music" /></FF>
+          <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <input type="checkbox" checked={editing.published} onChange={e => setEditing(p => ({ ...p, published: e.target.checked }))} id="pub-check" />
+            <label htmlFor="pub-check" style={{ fontSize: '13px', color: 'var(--text)' }}>Published</label>
+          </div>
+          <FAs onSave={() => save(editing)} onCancel={() => setEditing(null)} />
+        </FormBox>
+      )}
+      <Table heads={['Title', 'Status', 'Date', 'Actions']}>
+        {posts.map(p => (
+          <tr key={p.id}>
+            <Td bold>{p.title}</Td>
+            <Td><Badge color={p.published ? 'green' : 'gray'}>{p.published ? 'Published' : 'Draft'}</Badge></Td>
+            <Td small>{new Date(p.created_at).toLocaleDateString()}</Td>
+            <Td>
+              <ActBtn onClick={() => setEditing(p)}><Edit2 size={13} /></ActBtn>
+              <ActBtn danger onClick={() => del(p.id)}><Trash2 size={13} /></ActBtn>
+            </Td>
+          </tr>
+        ))}
+      </Table>
+    </PanelCard>
+  )
+}
+
 // ── EVENTS ────────────────────────────────────────────────────────────────────
 function EventsManager({ showToast }) {
   const t = useT()
@@ -148,9 +217,7 @@ function EventsManager({ showToast }) {
   const blank = { title:'',description:'',date:'',time:'18:00',location:'',capacity:30,image_url:'' }
 
   useEffect(() => {
-    // Load events
     supabase.from('events').select('*').order('date').then(({data}) => setEvents(data||[]))
-    // Load all registration counts in one query
     supabase.from('event_registrations').select('event_id, confirmed').then(({data}) => {
       const reg = {}, conf = {}
       ;(data||[]).forEach(r => {
@@ -207,10 +274,7 @@ function EventsManager({ showToast }) {
           ))}
         </Table>
       </PanelCard>
-
-      {detailEvent && (
-        <AdminEventDetail event={detailEvent} onClose={()=>setDetailEvent(null)} />
-      )}
+      {detailEvent && <AdminEventDetail event={detailEvent} onClose={()=>setDetailEvent(null)} />}
     </>
   )
 }
@@ -230,15 +294,12 @@ function EventForm({ ev, onSave, onCancel }) {
   )
 }
 
-// ── GALLERY ───────────────────────────────────────────────────────────────────
 function GalleryManager({ showToast }) {
   const t = useT()
   const [items,setItems]=useState([])
   const [editing,setEditing]=useState(null)
   const blank={title:'',description:'',image_url:''}
-
   useEffect(()=>{ supabase.from('gallery').select('*').order('created_at',{ascending:false}).then(({data})=>setItems(data||[])) },[])
-
   const save=async(g)=>{
     const{id,created_at,...fields}=g
     if(id){const{data}=await supabase.from('gallery').update(fields).eq('id',id).select().single();setItems(p=>p.map(x=>x.id===id?data:x))}
@@ -246,7 +307,6 @@ function GalleryManager({ showToast }) {
     setEditing(null);showToast('Saved!')
   }
   const del=async(id)=>{if(!confirm('Delete?'))return;await supabase.from('gallery').delete().eq('id',id);setItems(p=>p.filter(g=>g.id!==id));showToast(t('admin.deleted'))}
-
   return(
     <PanelCard title="Manage Gallery" action={<AddBtn onClick={()=>setEditing(blank)}/>}>
       {editing&&(
@@ -270,35 +330,30 @@ function GalleryManager({ showToast }) {
   )
 }
 
-// ── USERS ─────────────────────────────────────────────────────────────────────
 function UsersManager({ showToast }) {
   const t = useT()
   const { profile:me }=useAuth()
   const [users,setUsers]=useState([])
   const [loading,setLoading]=useState(true)
-
   useEffect(()=>{ supabase.from('profiles').select('*').order('created_at').then(({data})=>{setUsers(data||[]);setLoading(false)}) },[])
-
   const toggleRole=async(u)=>{
     const r=u.role==='admin'?'member':'admin'
     await supabase.from('profiles').update({role:r}).eq('id',u.id)
     setUsers(p=>p.map(x=>x.id===u.id?{...x,role:r}:x));showToast(t('admin.roleUpdated'))
   }
   const del=async(u)=>{
-    if(u.id===me?.id){showToast(t('admin.cantDeleteSelf'));return}
-    if(!confirm(`Delete ${u.name}?`))return
+    if(u.id===me.id){showToast(t('admin.cantDeleteSelf'));return}
+    if(!confirm(t('confirm.deleteUser')))return
     await supabase.from('profiles').delete().eq('id',u.id)
     setUsers(p=>p.filter(x=>x.id!==u.id));showToast(t('admin.userRemoved'))
   }
-
   return(
     <PanelCard title="Manage Users">
-      {loading?<Muted>Loading…</Muted>:(
-        <Table heads={['Avatar','Name','Email','Role','Actions']}>
+      {loading?<Muted>Loading users…</Muted>:(
+        <Table heads={['Name','Email','Role','Actions']}>
           {users.map(u=>(
             <tr key={u.id}>
-              <Td><div style={{width:'32px',height:'32px',borderRadius:'50%',background:u.avatar_color||'#C41E3A',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'11px',fontWeight:'700',color:'#fff'}}>{u.avatar_letters||u.name?.slice(0,2).toUpperCase()||'??'}</div></Td>
-              <Td bold>{u.name||'—'}</Td>
+              <Td bold>{u.name}</Td>
               <Td small>{u.email}</Td>
               <Td><Badge color={u.role==='admin'?'red':'blue'}>{u.role}</Badge></Td>
               <Td>
@@ -313,7 +368,6 @@ function UsersManager({ showToast }) {
   )
 }
 
-// ── TESTIMONIALS ──────────────────────────────────────────────────────────────
 function TestimonialsManager({ showToast }) {
   const t = useT()
   const [rows,setRows]=useState([])
@@ -340,15 +394,12 @@ function TestimonialsManager({ showToast }) {
   )
 }
 
-// ── RESOURCES ─────────────────────────────────────────────────────────────────
 function ResourcesManager({ showToast }) {
   const t = useT()
   const [rows,setRows]=useState([])
   const [editing,setEditing]=useState(null)
   const blank={title:'',type:'PDF',file_url:'',description:''}
-
   useEffect(()=>{ supabase.from('resources').select('*').order('created_at',{ascending:false}).then(({data})=>setRows(data||[])) },[])
-
   const save=async(r)=>{
     const{id,created_at,...fields}=r
     if(id){const{data}=await supabase.from('resources').update(fields).eq('id',id).select().single();setRows(p=>p.map(x=>x.id===id?data:x))}
@@ -356,7 +407,6 @@ function ResourcesManager({ showToast }) {
     setEditing(null);showToast('Saved!')
   }
   const del=async(id)=>{ if(!confirm('Delete?'))return;await supabase.from('resources').delete().eq('id',id);setRows(p=>p.filter(r=>r.id!==id));showToast(t('admin.deleted')) }
-
   return(
     <PanelCard title="Manage Resources" action={<AddBtn onClick={()=>setEditing(blank)}/>}>
       {editing&&(
@@ -387,7 +437,6 @@ function ResourcesManager({ showToast }) {
   )
 }
 
-// ── PAGE CONTENT ──────────────────────────────────────────────────────────────
 const SECTIONS=[
   {key:'hero',   label:'Hero',    fields:[{k:'title',l:'Title'},{k:'subtitle',l:'Subtitle'},{k:'description',l:'Description',big:true}]},
   {key:'about',  label:'About',   fields:[{k:'mission',l:'Mission',big:true},{k:'history',l:'History',big:true},{k:'values',l:'Values'}]},
@@ -427,20 +476,8 @@ function ContentManager({ pageContent, setPageContent, showToast }) {
   )
 }
 
-// ── SHARED PRIMITIVES ─────────────────────────────────────────────────────────
 const iSt={width:'100%',padding:'9px 12px',border:'1.5px solid #e0d0c0',borderRadius:'8px',fontSize:'14px',fontFamily:'inherit',outline:'none',background:'#fff',boxSizing:'border-box'}
-
-function PanelCard({title,children,action}){
-  return(
-    <div style={{background:'#fff',borderRadius:'12px',border:'1px solid var(--border)',padding:'22px',marginBottom:'16px'}}>
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'18px'}}>
-        <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:'1.1rem',color:'var(--ink)',margin:0}}>{title}</h3>
-        {action}
-      </div>
-      {children}
-    </div>
-  )
-}
+function PanelCard({title,children,action}){return(<div style={{background:'#fff',borderRadius:'12px',border:'1px solid var(--border)',padding:'22px',marginBottom:'16px'}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'18px'}}><h3 style={{fontFamily:"'Playfair Display',serif",fontSize:'1.1rem',color:'var(--ink)',margin:0}}>{title}</h3>{action}</div>{children}</div>)}
 function AddBtn({onClick}){return<button onClick={onClick} style={{background:'var(--red)',color:'#fff',border:'none',padding:'7px 14px',borderRadius:'7px',cursor:'pointer',fontFamily:'inherit',fontSize:'12px',display:'flex',alignItems:'center',gap:'5px',fontWeight:'500'}}><Plus size={12}/>Add New</button>}
 function Table({heads,children}){return<div style={{overflowX:'auto'}}><table style={{width:'100%',borderCollapse:'collapse',fontSize:'13px'}}><thead><tr>{heads.map(h=><th key={h} style={{textAlign:'left',padding:'9px 12px',background:'var(--parchment)',color:'var(--muted)',fontSize:'10px',textTransform:'uppercase',letterSpacing:'.06em',fontWeight:'500',whiteSpace:'nowrap'}}>{h}</th>)}</tr></thead><tbody>{children}</tbody></table></div>}
 function Td({children,style,bold,small}){return<td style={{padding:'11px 12px',borderBottom:'1px solid var(--border)',verticalAlign:'middle',color:'var(--text)',fontWeight:bold?'600':undefined,fontSize:small?'12px':undefined,...style}}>{children}</td>}

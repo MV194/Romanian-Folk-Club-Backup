@@ -3,10 +3,10 @@ import { LogOut, Menu, X, Users } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useT, useLang, LANGUAGES } from '../lib/i18n.jsx'
 
-const NAV_SECTIONS = ['home', 'about', 'events', 'gallery', 'testimonials', 'contact']
+const NAV_SECTIONS = ['home', 'about', 'events', 'blog', 'gallery', 'testimonials', 'contact']
 const NAV_KEYS = {
   home: 'nav.home', about: 'nav.about', events: 'nav.events',
-  gallery: 'nav.gallery', testimonials: 'nav.testimonials', contact: 'nav.contact',
+  blog: 'nav.blog', gallery: 'nav.gallery', testimonials: 'nav.testimonials', contact: 'nav.contact',
 }
 
 export default function Navbar({ onLoginClick, onDashboardClick, onLogoutClick, onScrollTo, showToast }) {

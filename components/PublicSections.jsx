@@ -264,6 +264,7 @@ export function Footer({ onScrollTo }) {
     { key:'home',         lbl:'nav.home'         },
     { key:'about',        lbl:'nav.about'        },
     { key:'events',       lbl:'nav.events'       },
+    { key:'blog',         lbl:'nav.blog'         },
     { key:'gallery',      lbl:'nav.gallery'      },
     { key:'testimonials', lbl:'nav.testimonials' },
     { key:'contact',      lbl:'nav.contact'      },
